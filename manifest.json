@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Sanchit Interceptor — Web Security Workbench",
+  "version": "1.0.0",
+  "author": "Sanchit",
+  "description": "Sanchit Interceptor — Ultimate in-browser web security workbench & HTTP proxy. Intercept, repeat, decode, and analyze HTTP traffic with .sanchit & .burp project support. Copyright (c) 2026 Sanchit.",
+  "permissions": [
+    "debugger",
+    "storage",
+    "tabs",
+    "downloads",
+    "alarms",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Sanchit Interceptor",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "log.html",
+        "log.css",
+        "log.js",
+        "db.js",
+        "core/http-parser.js",
+        "core/sanchit-format.js",
+        "core/burp-xml-parser.js",
+        "core/har-parser.js",
+        "core/crypto-utils.js",
+        "core/diff-engine.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

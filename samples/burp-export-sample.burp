@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!DOCTYPE items SYSTEM "https://burp.net/dtd/burp_items.dtd">
+<items burpVersion="2026.1" exportDate="Sun Oct 11 20:00:00 UTC 2026">
+  <item>
+    <time>Sun Oct 11 20:01:00 UTC 2026</time>
+    <url>https://api.vulnerable-app.org/api/v2/auth/login</url>
+    <host ip="192.168.1.10">api.vulnerable-app.org</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method>POST</method>
+    <path>/api/v2/auth/login</path>
+    <extension>null</extension>
+    <request base64="true">UE9TVCAvYXBpL3YyL2F1dGgvbG9naW4gSFRUUC8xLjENCkhvc3Q6IGFwaS52dWxuZXJhYmxlLWFwcC5vcmcNCkNvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbg0KVXNlci1BZ2VudDogQnVycExpdGUgVWx0aW1hdGUvMi4wDQoNCnsidXNlcm5hbWUiOiJhZG1pbiIsInBhc3N3b3JkIjoicGFzc3dvcmQxMjMifQ==</request>
+    <status>200</status>
+    <responselength>185</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true">SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NCkNvbnRlbnQtTGVuZ3RoOiAxODUNCg0KeyJzdWNjZXNzIjp0cnVlLCJ1c2VySWQiOjQyLCJyb2xlIjoiYWRtaW4iLCJ0b2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUoxY21sbVpTSTZJbUZrYldsdUlpd2lhV0YwT2pFM09USXhNalEwTlRZZmR1bW15LnNpZyJ9</response>
+    <comment>Captured Login Vector with Admin Role</comment>
+  </item>
+  <item>
+    <time>Sun Oct 11 20:01:30 UTC 2026</time>
+    <url>https://api.vulnerable-app.org/api/v2/users/profile?id=42</url>
+    <host ip="192.168.1.10">api.vulnerable-app.org</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method>GET</method>
+    <path>/api/v2/users/profile</path>
+    <extension>null</extension>
+    <request base64="true">R0VUIC9hcGkvdjIvdXNlcnMvcHJvZmlsZT9pZD00MiBIVFRQLzEuMQ0K SG9zdDogYXBpLnZ1bG5lcmFibGUtYXBwLm9yZw0KIEF1dGhvcml6YXRpb246IEJlYXJlciB0b2tlbl80Mg0KDQo=</request>
+    <status>200</status>
+    <responselength>142</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true">SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NCg0KeyJpZCI6NDIsImVtYWlsIjoiYWRtaW5Ac2hvcC5sb2NhbCIsImNyZWRpdENhcmQiOiIqKioqLTQ0NDQtODg4OCIsImFkZHJlc3MiOiJTZWNyZXQgVmF1bHQgMSJ9</response>
+    <comment>IDOR Candidate: Profile lookup with numerical ID</comment>
+  </item>
+</items>

@@ -1,0 +1,162 @@
+{
+  "magic": "SANCHIT_BURP_PROJECT_V1",
+  "version": "1.0.0",
+  "app": "Sanchit Interceptor",
+  "created_at": "2026-10-11T20:00:00.000Z",
+  "project_name": "E-Commerce Security Audit",
+  "summary": {
+    "request_count": 3,
+    "host_count": 2,
+    "hosts": [
+      "api.shop.local",
+      "auth.shop.local"
+    ],
+    "mime_breakdown": {
+      "json": 3
+    },
+    "total_response_bytes": 1048,
+    "repeater_tab_count": 2
+  },
+  "scope": {
+    "include": [
+      "*.shop.local"
+    ],
+    "exclude": []
+  },
+  "repeater": [
+    {
+      "id": "rep_tab_1",
+      "name": "Auth Token Test",
+      "url": "https://auth.shop.local/oauth/token",
+      "requestText": "POST /oauth/token HTTP/1.1\r\nHost: auth.shop.local\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ngrant_type=client_credentials&client_id=sec_test"
+    },
+    {
+      "id": "rep_tab_2",
+      "name": "Admin Endpoint Fuzz",
+      "url": "https://api.shop.local/v1/admin/users",
+      "requestText": "GET /v1/admin/users HTTP/1.1\r\nHost: api.shop.local\r\nAuthorization: Bearer test_token\r\n\r\n"
+    }
+  ],
+  "requests": [
+    {
+      "id": "req_sanchit_01",
+      "seq": 1,
+      "url": "https://auth.shop.local/oauth/token",
+      "method": "POST",
+      "scheme": "https",
+      "host": "auth.shop.local",
+      "hostname": "auth.shop.local",
+      "path": "/oauth/token",
+      "query": {},
+      "status_code": 200,
+      "status_text": "OK",
+      "mime_group": "json",
+      "initiated_at": "2026-10-11T20:01:10.000Z",
+      "duration_ms": 142,
+      "notes": "Generated bearer auth token",
+      "request": {
+        "headers": {
+          "Host": "auth.shop.local",
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "Mozilla/5.0 Chrome/130.0"
+        },
+        "cookies": [],
+        "body": "grant_type=client_credentials&client_id=sec_test",
+        "body_size": 48
+      },
+      "response": {
+        "status": 200,
+        "status_text": "OK",
+        "headers": {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+          "Set-Cookie": "sess_id=987654321; Path=/; Secure; HttpOnly"
+        },
+        "cookies": [
+          { "name": "sess_id", "value": "987654321", "domain": "auth.shop.local", "path": "/", "secure": true, "http_only": true }
+        ],
+        "body": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDAxIiwibmFtZSI6IlNhbmNoaXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTIxMjM0NTYsImV4cCI6MTgwMDAwMDAwMH0.signature\",\"token_type\":\"Bearer\",\"expires_in\":3600}",
+        "body_size": 218,
+        "body_encoding": "text"
+      },
+      "timing": { "blocked": 0, "dns": 12, "connect": 25, "ssl": 30, "send": 5, "wait": 65, "receive": 5 }
+    },
+    {
+      "id": "req_sanchit_02",
+      "seq": 2,
+      "url": "https://api.shop.local/v1/products?category=electronics&limit=10",
+      "method": "GET",
+      "scheme": "https",
+      "host": "api.shop.local",
+      "hostname": "api.shop.local",
+      "path": "/v1/products",
+      "query": { "category": "electronics", "limit": "10" },
+      "status_code": 200,
+      "status_text": "OK",
+      "mime_group": "json",
+      "initiated_at": "2026-10-11T20:01:25.000Z",
+      "duration_ms": 68,
+      "notes": "Public catalog API",
+      "request": {
+        "headers": {
+          "Host": "api.shop.local",
+          "Accept": "application/json"
+        },
+        "cookies": [],
+        "body": "",
+        "body_size": 0
+      },
+      "response": {
+        "status": 200,
+        "status_text": "OK",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Total-Count": "42"
+        },
+        "cookies": [],
+        "body": "{\"products\":[{\"id\":101,\"name\":\"Wireless Keyboard\",\"price\":49.99},{\"id\":102,\"name\":\"Gaming Mouse\",\"price\":39.99}]}",
+        "body_size": 115,
+        "body_encoding": "text"
+      },
+      "timing": { "blocked": 0, "dns": 0, "connect": 0, "ssl": 0, "send": 2, "wait": 62, "receive": 4 }
+    },
+    {
+      "id": "req_sanchit_03",
+      "seq": 3,
+      "url": "https://api.shop.local/v1/admin/users",
+      "method": "GET",
+      "scheme": "https",
+      "host": "api.shop.local",
+      "hostname": "api.shop.local",
+      "path": "/v1/admin/users",
+      "query": {},
+      "status_code": 403,
+      "status_text": "Forbidden",
+      "mime_group": "json",
+      "initiated_at": "2026-10-11T20:01:40.000Z",
+      "duration_ms": 52,
+      "notes": "Access Control Test: 403 Forbidden without elevation",
+      "request": {
+        "headers": {
+          "Host": "api.shop.local",
+          "Authorization": "Bearer standard_user_token"
+        },
+        "cookies": [],
+        "body": "",
+        "body_size": 0
+      },
+      "response": {
+        "status": 403,
+        "status_text": "Forbidden",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "cookies": [],
+        "body": "{\"error\":\"insufficient_permissions\",\"message\":\"Admin role required\"}",
+        "body_size": 65,
+        "body_encoding": "text"
+      },
+      "timing": { "blocked": 0, "dns": 0, "connect": 0, "ssl": 0, "send": 2, "wait": 48, "receive": 2 }
+    }
+  ]
+}

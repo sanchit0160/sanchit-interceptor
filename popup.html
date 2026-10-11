@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sanchit Interceptor</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div class="brand">
+      <div class="brand-mark">
+        <img src="icons/icon48.png" alt="Sanchit Interceptor" width="28" height="28" style="border-radius:6px; display:block;">
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">Sanchit Interceptor</span>
+        <span class="brand-sub">Web Security & HTTP Workbench</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="status" id="status">
+    <span class="dot" data-state="off"></span>
+    <span id="statusText">Not attached</span>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <span class="stat-label">Captured</span>
+      <b class="stat-val" id="statTotal">0</b>
+    </div>
+    <div class="stat-box">
+      <span class="stat-label">Intercept</span>
+      <b class="stat-val" id="statIntercept">OFF</b>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="openLogBtn">Open Sanchit Interceptor</button>
+  </div>
+
+  <div class="actions-grid">
+    <button class="btn btn-secondary" id="attachBtn">Attach Tab</button>
+    <button class="btn btn-secondary" id="detachBtn">Detach</button>
+  </div>
+
+  <footer class="foot">
+    <span>v1.0.0 · © 2026 Sanchit</span>
+  </footer>
+</div>
+<script src="popup.js" type="module"></script>
+</body>
+</html>

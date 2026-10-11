@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanchit Interceptor — Web Security & HTTP Workbench</title>
+<link rel="stylesheet" href="log.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ================= Topbar ================= -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <img src="icons/icon48.png" alt="Sanchit Interceptor" width="26" height="26" style="border-radius:6px; display:block;">
+      </div>
+      <div class="brand-info">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="brand-title">Sanchit Interceptor</span>
+          <span class="brand-version">v1.0.0</span>
+        </div>
+        <span class="brand-copyright" style="font-size:10px; color:var(--text-3); letter-spacing:0.02em;">© 2026 Sanchit · All rights reserved</span>
+      </div>
+    </div>
+
+    <div class="status-pill" id="statusPill">
+      <span class="dot" data-state="off"></span>
+      <span id="statusText">Not attached</span>
+    </div>
+
+    <!-- Intercept Toggle in Topbar -->
+    <div class="intercept-toggle-wrap">
+      <button class="intercept-btn off" id="quickInterceptBtn">
+        <span class="pulse-indicator"></span>
+        <span class="intercept-label">Intercept is OFF</span>
+      </button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="topbar-actions">
+      <button class="btn btn-secondary btn-sm" id="attachBtn" title="Attach debugger to current tab">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Attach
+      </button>
+      <button class="btn btn-secondary btn-sm" id="detachBtn" title="Detach debugger">Detach</button>
+
+      <div class="sep"></div>
+
+      <!-- Project .sanchit & .burp Actions -->
+      <button class="btn btn-primary btn-sm btn-highlight" id="saveSanchitBtn" title="Save entire project as .sanchit file">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save .sanchit
+      </button>
+      
+      <button class="btn btn-secondary btn-sm" id="loadFileBtn" title="Load .sanchit, .burp, .har, or .json file">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Load File
+      </button>
+
+      <div class="dropdown">
+        <button class="btn btn-secondary btn-sm dropdown-trigger" id="exportMenuBtn">
+          Export ▾
+        </button>
+        <div class="dropdown-menu hidden" id="exportMenu">
+          <button class="dropdown-item" id="exportSanchitItem">Export Project (.sanchit)</button>
+          <button class="dropdown-item" id="exportBurpXmlItem">Export Burp XML (.burp)</button>
+          <button class="dropdown-item" id="exportHarItem">Export HAR 1.2 (.har)</button>
+          <button class="dropdown-item" id="exportJsonItem">Export Raw JSON (.json)</button>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+      <button class="btn btn-ghost btn-sm text-danger" id="clearBtn" title="Clear all history">Clear</button>
+    </div>
+  </header>
+
+  <!-- ================= Primary Burp Suite Navigation ================= -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-view="proxy">
+      <span class="tab-icon">⚡</span> Proxy
+    </button>
+    <button class="nav-tab" data-view="target">
+      <span class="tab-icon">🎯</span> Target & Site Map
+    </button>
+    <button class="nav-tab" data-view="repeater">
+      <span class="tab-icon">🔄</span> Repeater
+      <span class="nav-tab-badge" id="repeaterBadge">0</span>
+    </button>
+    <button class="nav-tab" data-view="decoder">
+      <span class="tab-icon">🔤</span> Decoder
+    </button>
+    <button class="nav-tab" data-view="comparer">
+      <span class="tab-icon">⚖️</span> Comparer
+    </button>
+  </nav>
+
+  <!-- ================= View 1: PROXY ================= -->
+  <section class="workbench-view active" id="viewProxy">
+    <!-- Sub-navigation for Proxy -->
+    <div class="sub-nav">
+      <button class="sub-tab active" data-sub="history">HTTP History</button>
+      <button class="sub-tab" data-sub="intercept">
+        Intercept
+        <span class="badge-count hidden" id="interceptPausedBadge">0</span>
+      </button>
+      <button class="sub-tab" data-sub="websockets">
+        WebSockets
+        <span class="badge-count hidden" id="wsCountBadge">0</span>
+      </button>
+    </div>
+
+    <!-- Sub-View: HTTP HISTORY -->
+    <div class="sub-view-content active" id="subProxyHistory">
+      <!-- Filter Bar -->
+      <section class="filters-bar">
+        <div class="filter-group">
+          <label for="fSearch">Search (URL/Headers/Bodies)</label>
+          <div class="search-input-wrap">
+            <input type="text" id="fSearch" placeholder="Filter requests or response bodies...">
+            <span class="search-clear hidden" id="searchClearBtn">×</span>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label for="fMethod">Method</label>
+          <select id="fMethod">
+            <option value="">All</option>
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>PATCH</option>
+            <option>DELETE</option>
+            <option>OPTIONS</option>
+            <option>HEAD</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="fStatus">Status</label>
+          <select id="fStatus">
+            <option value="">All</option>
+            <option value="2xx">2xx (Success)</option>
+            <option value="3xx">3xx (Redirect)</option>
+            <option value="4xx">4xx (Client Error)</option>
+            <option value="5xx">5xx (Server Error)</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="fMime">MIME Group</label>
+          <select id="fMime">
+            <option value="">All</option>
+            <option value="json">JSON</option>
+            <option value="xml">XML</option>
+            <option value="html">HTML</option>
+            <option value="js">JavaScript</option>
+            <option value="css">CSS</option>
+            <option value="xhr">XHR/Fetch</option>
+            <option value="image">Image</option>
+            <option value="media">Media</option>
+            <option value="font">Font</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="fHost">Host</label>
+          <select id="fHost">
+            <option value="">All Hosts</option>
+          </select>
+        </div>
+
+        <label class="checkbox-inline">
+          <input type="checkbox" id="fScopeOnly">
+          <span>In-scope only</span>
+        </label>
+
+        <div class="spacer"></div>
+
+        <div class="filter-stat">
+          <span id="countShown">0</span> / <span id="countTotal">0</span> requests
+        </div>
+
+        <label class="checkbox-inline">
+          <input type="checkbox" id="fAutoScroll" checked>
+          <span>Auto-scroll</span>
+        </label>
+
+        <button class="btn btn-ghost btn-sm" id="resetFiltersBtn">Reset</button>
+      </section>
+
+      <!-- Main Split: Request List & Request Inspector -->
+      <div class="split-container" id="historySplitContainer">
+        <!-- List Pane -->
+        <section class="split-pane-left" id="historyListPane">
+          <div class="table-head">
+            <div class="col col-seq sortable" data-sort="seq"># <span class="sort-icon"></span></div>
+            <div class="col col-time sortable" data-sort="time">Time <span class="sort-icon"></span></div>
+            <div class="col col-method sortable" data-sort="method">Method <span class="sort-icon"></span></div>
+            <div class="col col-status sortable" data-sort="status">Status <span class="sort-icon"></span></div>
+            <div class="col col-host sortable" data-sort="host">Host <span class="sort-icon"></span></div>
+            <div class="col col-path sortable" data-sort="path">Path & Query <span class="sort-icon"></span></div>
+            <div class="col col-mime sortable" data-sort="mime">MIME <span class="sort-icon"></span></div>
+            <div class="col col-size sortable" data-sort="size">Size <span class="sort-icon"></span></div>
+            <div class="col col-dur sortable" data-sort="dur">Dur <span class="sort-icon"></span></div>
+            <div class="col col-notes sortable" data-sort="notes">Notes <span class="sort-icon"></span></div>
+          </div>
+          <div class="table-body" id="tableBody"></div>
+        </section>
+
+        <!-- Draggable Resizer -->
+        <div class="split-gutter" id="historyGutter"></div>
+
+        <!-- Detail Inspector Pane -->
+        <section class="split-pane-right" id="historyDetailPane">
+          <div class="detail-empty" id="detailEmpty">
+            <div class="empty-icon">🔍</div>
+            <p>Select a request from the table to view headers, bodies, cookies, and raw payloads.</p>
+          </div>
+
+          <div class="detail-content hidden" id="detailContent">
+            <!-- Action Toolbar for Selected Request -->
+            <div class="detail-toolbar">
+              <div class="detail-title-wrap">
+                <span class="detail-method-badge" id="detailMethod">GET</span>
+                <span class="detail-url" id="detailUrl" title="Click to copy">https://example.com</span>
+              </div>
+              <div class="detail-quick-actions">
+                <button class="btn btn-secondary btn-xs" id="actionSendRepeater" title="Send request to Repeater (Ctrl+R)">
+                  Send to Repeater
+                </button>
+                <button class="btn btn-secondary btn-xs" id="actionSendComparer" title="Send to Comparer">
+                  Send to Comparer
+                </button>
+                <button class="btn btn-secondary btn-xs" id="actionCopyCurl" title="Copy as cURL">
+                  Copy as cURL
+                </button>
+                <button class="btn btn-secondary btn-xs" id="actionCopyUrl">
+                  Copy URL
+                </button>
+                <button class="btn btn-secondary btn-xs" id="actionAddNote">
+                  Note
+                </button>
+              </div>
+            </div>
+
+            <!-- Meta statistics row -->
+            <div class="detail-meta-row" id="detailMeta"></div>
+
+            <!-- Inspector Sub-Tabs -->
+            <nav class="detail-tabs">
+              <div class="tab-segment" title="Request Data">
+                <span class="segment-tag req">REQ</span>
+                <button class="tab active" data-tab="req-headers" title="Request Headers Table">Headers</button>
+                <button class="tab" data-tab="req-body" title="Request Body Payload">Body</button>
+                <button class="tab" data-tab="raw-req" title="Raw HTTP Request (Headers & Body)">Raw</button>
+              </div>
+              <div class="tab-divider"></div>
+              <div class="tab-segment" title="Response Data">
+                <span class="segment-tag res">RES</span>
+                <button class="tab" data-tab="res-headers" title="Response Headers Table">Headers</button>
+                <button class="tab" data-tab="res-body" title="Response Body Payload">Body</button>
+                <button class="tab" data-tab="raw-res" title="Raw HTTP Response (Headers & Body)">Raw</button>
+              </div>
+              <div class="tab-divider"></div>
+              <div class="tab-segment" title="Session & Timing Analysis">
+                <button class="tab" data-tab="cookies" title="Cookies & Set-Cookie">Cookies</button>
+                <button class="tab" data-tab="timing" title="Timing Breakdown">Timing</button>
+              </div>
+              <div class="tab-divider"></div>
+              <div class="tab-segment" title="Payload Viewers">
+                <button class="tab" data-tab="hex" title="Hex Dump View">Hex</button>
+                <button class="tab" data-tab="render" title="HTML Browser Preview">Preview</button>
+              </div>
+            </nav>
+
+            <!-- Inspector Body -->
+            <div class="detail-body" id="detailBody"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Sub-View: INTERCEPT -->
+    <div class="sub-view-content" id="subProxyIntercept">
+      <div class="intercept-workbench">
+        <div class="intercept-control-bar">
+          <button class="btn btn-lg btn-toggle-intercept" id="interceptToggleBtn">
+            <span class="dot"></span>
+            <span id="interceptToggleText">Intercept is OFF</span>
+          </button>
+          
+          <div class="intercept-action-buttons hidden" id="interceptActionButtons">
+            <button class="btn btn-success" id="interceptForwardBtn">
+              Forward (Modified)
+            </button>
+            <button class="btn btn-danger" id="interceptDropBtn">
+              Drop
+            </button>
+          </div>
+
+          <div class="spacer"></div>
+          <span class="intercept-queue-info" id="interceptQueueInfo">0 paused requests in queue</span>
+        </div>
+
+        <div class="intercept-editor-wrap">
+          <div class="intercept-empty" id="interceptEmpty">
+            <h3>Intercept is currently inactive or waiting for requests</h3>
+            <p>Turn Intercept ON and browse the attached tab. In-flight requests will be paused here for modification before transmission.</p>
+          </div>
+
+          <div class="intercept-active-editor hidden" id="interceptActiveEditor">
+            <div class="editor-header">
+              <span class="editor-title">Paused Request: <b id="interceptReqSummary">GET https://...</b></span>
+            </div>
+            <textarea class="raw-http-editor" id="interceptRawText" spellcheck="false"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-View: WEBSOCKETS -->
+    <div class="sub-view-content" id="subProxyWebsockets">
+      <div class="ws-workbench">
+        <div class="ws-head-bar">
+          <span class="ws-title">Live WebSocket Frames</span>
+          <div class="spacer"></div>
+          <button class="btn btn-secondary btn-sm" id="clearWsBtn">Clear Frames</button>
+        </div>
+        <div class="ws-table-head">
+          <div class="col col-ws-dir">Dir</div>
+          <div class="col col-ws-time">Time</div>
+          <div class="col col-ws-len">Length</div>
+          <div class="col col-ws-data">Payload Data</div>
+        </div>
+        <div class="ws-table-body" id="wsTableBody">
+          <div class="empty-msg">No WebSocket frames captured yet. Attach to a tab using WebSockets.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= View 2: TARGET & SITE MAP ================= -->
+  <section class="workbench-view" id="viewTarget">
+    <div class="target-layout">
+      <!-- Left: Site Map Tree -->
+      <aside class="sitemap-sidebar">
+        <div class="sidebar-header">
+          <span>Site Map Hierarchy</span>
+          <button class="btn btn-ghost btn-xs" id="refreshSitemapBtn" title="Rebuild tree">↻</button>
+        </div>
+        <div class="sitemap-tree" id="sitemapTree">
+          <div class="empty-msg">No hosts in site map yet.</div>
+        </div>
+      </aside>
+
+      <!-- Right: Target Scope & Host Inspector -->
+      <main class="target-main">
+        <div class="target-card">
+          <h2>Target Scope Rules</h2>
+          <p class="sub">Define target hosts and endpoints. You can toggle "In-scope only" on the HTTP history filter bar to hide third-party tracking noise.</p>
+          
+          <div class="scope-input-row">
+            <input type="text" id="newScopeRuleInput" placeholder="e.g. *.example.com or ^https://api\.target\.org">
+            <button class="btn btn-primary btn-sm" id="addScopeRuleBtn">Add to Scope</button>
+          </div>
+
+          <div class="scope-rules-list" id="scopeRulesList">
+            <!-- Dynamic scope tags -->
+          </div>
+        </div>
+
+        <div class="target-card" id="targetSelectedCard">
+          <h2>Selected Host Overview</h2>
+          <div id="targetHostDetails">
+            <p class="empty-msg">Select a host from the site map tree on the left.</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ================= View 3: REPEATER ================= -->
+  <section class="workbench-view" id="viewRepeater">
+    <div class="repeater-workbench">
+      <!-- Repeater Tab Bar -->
+      <div class="repeater-tabs-bar" id="repeaterTabsBar">
+        <div class="repeater-tabs-list" id="repeaterTabsList">
+          <!-- Dynamic tabs -->
+        </div>
+        <button class="repeater-add-tab-btn" id="repeaterNewTabBtn" title="New Repeater Tab">+</button>
+      </div>
+
+      <!-- Repeater Split Workspace -->
+      <div class="repeater-split-workspace">
+        <!-- Request Panel -->
+        <div class="repeater-panel repeater-req-panel">
+          <div class="panel-header">
+            <span class="panel-title">Request Editor</span>
+            <div class="repeater-ctrls">
+              <button class="btn btn-secondary btn-xs" id="btnRepeaterReqToComparer" title="Send this request to Comparer">
+                ⚖️ Compare Req
+              </button>
+              <button class="btn btn-primary btn-sm" id="repeaterSendBtn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Send
+              </button>
+            </div>
+          </div>
+          <div class="repeater-target-row">
+            <span class="label">Target:</span>
+            <input type="text" id="repeaterTargetUrl" placeholder="https://example.com/api/v1">
+          </div>
+          <textarea class="repeater-code-editor" id="repeaterReqEditor" spellcheck="false" placeholder="GET / HTTP/1.1&#10;Host: example.com&#10;User-Agent: Mozilla/5.0..."></textarea>
+        </div>
+
+        <!-- Draggable Gutter -->
+        <div class="split-gutter" id="repeaterGutter"></div>
+
+        <!-- Response Panel -->
+        <div class="repeater-panel repeater-res-panel">
+          <div class="panel-header">
+            <span class="panel-title">Response</span>
+            <div class="repeater-res-meta" id="repeaterResMeta">
+              <button class="btn btn-secondary btn-xs" id="btnRepeaterResToComparer" title="Send this response to Comparer">
+                ⚖️ Compare Res
+              </button>
+              <span class="badge" id="repeaterStatusBadge">—</span>
+              <span class="badge" id="repeaterDurBadge">— ms</span>
+              <span class="badge" id="repeaterSizeBadge">— B</span>
+            </div>
+          </div>
+          <nav class="repeater-res-tabs">
+            <button class="tab active" data-rtab="pretty">Pretty</button>
+            <button class="tab" data-rtab="raw">Raw</button>
+            <button class="tab" data-rtab="headers">Headers</button>
+            <button class="tab" data-rtab="render">Render</button>
+          </nav>
+          <div class="repeater-res-body-wrap" id="repeaterResWrap">
+            <pre class="body-block" id="repeaterResBlock">Click "Send" to issue request and view response.</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= View 4: DECODER ================= -->
+  <section class="workbench-view" id="viewDecoder">
+    <div class="decoder-workbench">
+      <div class="decoder-header">
+        <h2>Burp Decoder / Encoder & JWT Inspector</h2>
+        <p class="sub">Transform and inspect arbitrary strings, tokens, and binary formats.</p>
+      </div>
+
+      <div class="decoder-grid">
+        <!-- Input Block -->
+        <div class="decoder-card">
+          <div class="card-head">
+            <span>Input String</span>
+            <div class="card-badges" id="detectedFormatsBadges"></div>
+          </div>
+          <textarea class="decoder-textarea" id="decoderInput" placeholder="Paste text, URL-encoded string, Base64, Hex, or JWT token here..."></textarea>
+          
+          <div class="decoder-transforms-bar">
+            <span class="t-group-label">Transform:</span>
+            
+            <button class="btn btn-secondary btn-xs" data-action="url-dec">URL Decode</button>
+            <button class="btn btn-secondary btn-xs" data-action="url-enc">URL Encode</button>
+            
+            <button class="btn btn-secondary btn-xs" data-action="b64-dec">Base64 Decode</button>
+            <button class="btn btn-secondary btn-xs" data-action="b64-enc">Base64 Encode</button>
+            
+            <button class="btn btn-secondary btn-xs" data-action="hex-dec">Hex Decode</button>
+            <button class="btn btn-secondary btn-xs" data-action="hex-enc">Hex Encode</button>
+            
+            <button class="btn btn-secondary btn-xs" data-action="html-dec">HTML Decode</button>
+            <button class="btn btn-secondary btn-xs" data-action="html-enc">HTML Encode</button>
+
+            <div class="sep"></div>
+            <span class="t-group-label">Hash:</span>
+            <button class="btn btn-secondary btn-xs" data-action="hash-md5">MD5</button>
+            <button class="btn btn-secondary btn-xs" data-action="hash-sha1">SHA-1</button>
+            <button class="btn btn-secondary btn-xs" data-action="hash-sha256">SHA-256</button>
+          </div>
+        </div>
+
+        <!-- Output Block -->
+        <div class="decoder-card">
+          <div class="card-head">
+            <span>Decoded / Encoded Output</span>
+            <button class="btn btn-ghost btn-xs" id="copyDecoderOutputBtn">Copy</button>
+          </div>
+          <textarea class="decoder-textarea output" id="decoderOutput" readonly></textarea>
+        </div>
+      </div>
+
+      <!-- JWT Inspector Section (visible if JWT detected) -->
+      <div class="decoder-jwt-panel hidden" id="decoderJwtPanel">
+        <h3>JWT Token Claims Analysis</h3>
+        <div class="jwt-analysis-grid">
+          <div class="jwt-part-box">
+            <h4>Header (Algorithm & Type)</h4>
+            <pre class="json-code" id="jwtHeaderCode"></pre>
+          </div>
+          <div class="jwt-part-box">
+            <h4>Payload Claims</h4>
+            <div class="jwt-expiry-banner" id="jwtExpiryBanner"></div>
+            <pre class="json-code" id="jwtPayloadCode"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= View 5: COMPARER ================= -->
+  <section class="workbench-view" id="viewComparer">
+    <div class="comparer-workbench">
+      <!-- Toolbar -->
+      <div class="comparer-head">
+        <div class="comparer-title-wrap">
+          <h2>⚖️ Request / Response Comparer</h2>
+          <span class="sub">Compare any two HTTP requests, responses, or payloads by words or lines with synchronized scrolling.</span>
+        </div>
+
+        <div class="comparer-controls">
+          <!-- Signature Burp Buttons -->
+          <button class="btn btn-primary btn-sm" id="btnCompareWords" title="Compare highlighting word-level differences">
+            Compare Words
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnCompareLines" title="Compare line-by-line">
+            Compare Lines
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnCompareBytes" title="Compare as raw byte / hex stream">
+            Compare Bytes
+          </button>
+
+          <div class="sep"></div>
+
+          <!-- View Mode Toggle -->
+          <div class="btn-group">
+            <button class="btn btn-secondary btn-xs active" id="btnViewSideBySide" title="Side-by-side synchronized view">Side-by-Side</button>
+            <button class="btn btn-secondary btn-xs" id="btnViewUnified" title="Inline unified diff view">Unified</button>
+          </div>
+
+          <div class="sep"></div>
+
+          <!-- Diff Options -->
+          <label class="checkbox-inline" title="Ignore leading/trailing whitespace changes">
+            <input type="checkbox" id="chkIgnoreWs">
+            <span>Ignore Whitespace</span>
+          </label>
+          <label class="checkbox-inline" title="Ignore letter case">
+            <input type="checkbox" id="chkIgnoreCase">
+            <span>Ignore Case</span>
+          </label>
+
+          <div class="sep"></div>
+
+          <button class="btn btn-secondary btn-xs" id="btnSwapSources" title="Swap Source A and Source B">
+            Swap A ⇄ B
+          </button>
+          <button class="btn btn-ghost btn-xs text-danger" id="clearCompareBtn">Clear</button>
+        </div>
+      </div>
+
+      <!-- Source Selectors & Textareas Grid -->
+      <div class="comparer-inputs-grid" id="comparerInputsGrid">
+        <!-- Source A -->
+        <div class="comparer-col">
+          <div class="col-head">
+            <span class="col-title">Source A</span>
+            <div class="col-loader-row">
+              <select class="comparer-select-item" id="selectItemA">
+                <option value="">-- Load from History --</option>
+              </select>
+              <div class="comparer-slot-radios">
+                <label><input type="radio" name="partA" value="full" checked> Full</label>
+                <label><input type="radio" name="partA" value="req"> Req</label>
+                <label><input type="radio" name="partA" value="res"> Res</label>
+                <label><input type="radio" name="partA" value="body"> Body</label>
+              </div>
+            </div>
+            <span class="col-stats" id="statsSourceA">0 lines</span>
+          </div>
+          <textarea class="comparer-textarea" id="compareTextA" spellcheck="false" placeholder="Paste item A (or right click an item in History to 'Send to Comparer')"></textarea>
+        </div>
+
+        <!-- Source B -->
+        <div class="comparer-col">
+          <div class="col-head">
+            <span class="col-title">Source B</span>
+            <div class="col-loader-row">
+              <select class="comparer-select-item" id="selectItemB">
+                <option value="">-- Load from History --</option>
+              </select>
+              <div class="comparer-slot-radios">
+                <label><input type="radio" name="partB" value="full" checked> Full</label>
+                <label><input type="radio" name="partB" value="req"> Req</label>
+                <label><input type="radio" name="partB" value="res"> Res</label>
+                <label><input type="radio" name="partB" value="body"> Body</label>
+              </div>
+            </div>
+            <span class="col-stats" id="statsSourceB">0 lines</span>
+          </div>
+          <textarea class="comparer-textarea" id="compareTextB" spellcheck="false" placeholder="Paste item B..."></textarea>
+        </div>
+      </div>
+
+      <!-- Results & Navigation Panel -->
+      <div class="comparer-diff-result hidden" id="comparerResult">
+        <!-- Stats & Diff Navigation Bar -->
+        <div class="diff-stats-bar">
+          <div class="diff-metrics">
+            <span class="similarity-badge" id="diffSimilarity">100% Match</span>
+            <span class="diff-pill mod" id="diffModCount">0 modified</span>
+            <span class="diff-pill add" id="diffAddCount">+0 added</span>
+            <span class="diff-pill del" id="diffDelCount">-0 deleted</span>
+          </div>
+
+          <div class="diff-nav-controls">
+            <button class="btn btn-secondary btn-xs" id="btnPrevDiff" title="Previous difference">▲ Prev Diff</button>
+            <span class="diff-cursor-info" id="diffCursorInfo">0 of 0</span>
+            <button class="btn btn-secondary btn-xs" id="btnNextDiff" title="Next difference">▼ Next Diff</button>
+          </div>
+
+          <button class="btn btn-ghost btn-xs" id="btnToggleInputs" title="Toggle input textareas to maximize comparison area">
+            Hide Input Panes
+          </button>
+        </div>
+
+        <!-- Diff Viewer Container -->
+        <div class="diff-viewer-wrap" id="diffViewerWrap">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ================= Universal File Import Modal ================= -->
+<div class="modal-overlay hidden" id="importModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Load Capture / Project File</h3>
+      <button class="modal-close" id="modalCloseBtn">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="dropzone" id="fileDropzone">
+        <div class="drop-icon">📁</div>
+        <h4>Drag & Drop file here</h4>
+        <p class="sub">Supports <b>.sanchit</b> projects, Burp Suite <b>.burp / .xml</b> exports, <b>.har</b> files, and <b>.json</b> captures.</p>
+        <button class="btn btn-primary btn-sm" id="chooseFileBtn">Select File from Computer</button>
+        <input type="file" id="fileInput" accept=".sanchit,.burp,.xml,.har,.json" class="hidden">
+      </div>
+
+      <div class="import-options">
+        <label class="radio-label">
+          <input type="radio" name="importMode" value="merge" checked>
+          <span>Merge with current requests</span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="importMode" value="replace">
+          <span>Replace current session</span>
+        </label>
+      </div>
+
+      <div class="import-progress hidden" id="importProgress">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="importProgressFill"></div>
+        </div>
+        <span class="progress-status" id="importStatusText">Parsing file...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Burp Suite Right-Click Context Menu ================= -->
+<div class="context-menu hidden" id="rowContextMenu">
+  <div class="menu-item" data-action="repeater">
+    <span class="menu-icon">🔄</span>
+    <span class="menu-text">Send to Repeater</span>
+    <span class="menu-shortcut">Ctrl+R</span>
+  </div>
+  <div class="menu-item" data-action="decoder">
+    <span class="menu-icon">🔤</span>
+    <span class="menu-text">Send to Decoder</span>
+  </div>
+  <div class="menu-item" data-action="comparer">
+    <span class="menu-icon">⚖️</span>
+    <span class="menu-text">Send to Comparer</span>
+  </div>
+  <div class="menu-sep"></div>
+  <div class="menu-item" data-action="toggle-scope">
+    <span class="menu-icon">🎯</span>
+    <span class="menu-text" id="ctxScopeText">Add Host to Scope</span>
+  </div>
+  <div class="menu-sep"></div>
+  <div class="menu-item" data-action="copy-url">
+    <span class="menu-icon">🔗</span>
+    <span class="menu-text">Copy URL</span>
+  </div>
+  <div class="menu-item" data-action="copy-curl">
+    <span class="menu-icon">💻</span>
+    <span class="menu-text">Copy as cURL</span>
+  </div>
+  <div class="menu-item" data-action="copy-fetch">
+    <span class="menu-icon">⚡</span>
+    <span class="menu-text">Copy as fetch()</span>
+  </div>
+  <div class="menu-sep"></div>
+  <div class="menu-color-row">
+    <span class="color-label">Highlight:</span>
+    <span class="color-dot none" data-color="" title="Clear highlight"></span>
+    <span class="color-dot red" data-color="red" title="Red"></span>
+    <span class="color-dot orange" data-color="orange" title="Orange"></span>
+    <span class="color-dot yellow" data-color="yellow" title="Yellow"></span>
+    <span class="color-dot green" data-color="green" title="Green"></span>
+    <span class="color-dot cyan" data-color="cyan" title="Cyan"></span>
+    <span class="color-dot purple" data-color="purple" title="Purple"></span>
+  </div>
+  <div class="menu-sep"></div>
+  <div class="menu-item" data-action="add-note">
+    <span class="menu-icon">📝</span>
+    <span class="menu-text">Add / Edit Note...</span>
+  </div>
+  <div class="menu-item text-danger" data-action="delete">
+    <span class="menu-icon">🗑️</span>
+    <span class="menu-text">Delete Request</span>
+  </div>
+</div>
+
+<script src="log.js" type="module"></script>
+</body>
+</html>
